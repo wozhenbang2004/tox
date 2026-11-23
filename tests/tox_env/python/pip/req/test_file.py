@@ -655,10 +655,30 @@ def test_req_path_with_space_quoted(tmp_path: Path) -> None:
     assert [str(i) for i in req_file.requirements] == ["c", "-c d<2"]
 
 
+@pytest.mark.parametrize("bits", [256, 384, 512])
+@pytest.mark.parametrize(
+    "digits",
+    [
+        pytest.param("abcdef0123456789", id="lowercase"),
+        pytest.param("ABCDEF0123456789", id="uppercase"),
+        pytest.param("aBcDeF0123456789", id="mixed-case"),
+    ],
+)
+def test_hash_hex_case(bits: int, digits: str, tmp_path: Path) -> None:
+    hash_value = f"sha{bits}:{digits * (bits // 64)}"
+    requirements_txt = tmp_path / "req.txt"
+    requirements_txt.write_text(f"attrs --hash={hash_value}")
+    (requirement,) = RequirementsFile(requirements_txt, constraint=False).requirements
+    assert requirement.options["hash"] == [hash_value]
+    assert str(requirement) == f"attrs --hash {hash_value}"
+
+
 @pytest.mark.parametrize(
     "hash_value",
     [
         pytest.param("sha256:a", id="sha256-colon-a"),
+        pytest.param(f"sha256:{'G' * 64}", id="uppercase-non-hex"),
+        pytest.param(f"SHA256:{'A' * 64}", id="uppercase-algorithm"),
         pytest.param(
             "sha256:xxxxxxxxxx123456789012345678901234567890123456789012345678901234",
             id="sha256-colon-xxxxxxxxxx123456789012345678901234567890123456789012345678901234",
