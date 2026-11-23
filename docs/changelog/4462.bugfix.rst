@@ -1,0 +1,1 @@
+Accept uppercase and mixed-case hexadecimal digests in requirements-file ``--hash`` options, matching pip.
